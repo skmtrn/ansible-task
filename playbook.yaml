@@ -77,20 +77,24 @@
 - name: Deploy Docker Compose app
   hosts: all
   become: true
-
   tasks:
-    - name: Copy docker-compose.yml file
-      copy:
-        src: docker-compose.yml
+    - name: Generate modified docker-compose.yml
+      template:
+        src: docker-compose.yml.j2
         dest: /var/local/todo-app/app/docker-compose.yml
-        mode: '0644'
 
+ 
+#    - name: Copy docker-compose.yml file
+#      copy:
+#        src: docker-compose.yml
+#        dest: /var/local/todo-app/app/docker-compose.yml
+#        mode: '0644'
+#
     - name: Run docker-compose up command
       docker_compose:
         project_name: todo-app
         project_src: /var/local/todo-app/app/
         state: present
-
     - name: Fetch running Docker containers
       command: docker ps --format "{{ '{{' }} .Names {{ '}}' }}"
       register: running_containers
