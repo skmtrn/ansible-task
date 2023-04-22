@@ -2,7 +2,6 @@
 - name: Prepare host for Docker Compose
   hosts: all
   become: true
-
   tasks:
     - name: Check if Docker is installed
       shell: docker --version
@@ -33,7 +32,7 @@
         sudo curl -L "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
         sudo chmod +x /usr/local/bin/docker-compose
       vars:
-        docker_compose_version: "2.17.21"
+        docker_compose_version: "1.29.2"
       when: ansible_distribution == 'Ubuntu' and docker_compose_output.rc != 0
 
     - name: Print Docker Compose version
@@ -50,19 +49,16 @@
       package:
         name: python3-pip
         state: present
-
-          #    - name: Install Docker Python module
-          #      pip:
-          #        name: docker
-          #        executable: pip3
-          #        state: present
-
-          #    - name: Install Docker Python module
-          #      pip:
-          #        name: docker-compose
-          #        executable: pip3
-          #        state: present
-
+    - name: Install Docker Python module
+      pip:
+                  name: docker
+                  executable: pip3
+                  state: present
+    - name: Install Docker-Compose Python module
+      pip:
+                  name: docker-compose
+                  executable: pip3
+                  state: present
 - name: get the app itself
   hosts: all
   become: true
@@ -102,3 +98,13 @@
     - name: Print running docker containers
       debug:
         msg: "{{running_containers.stdout_lines}}"
+    - name: Wait for the app to respond
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: "{{ hostvars[inventory_hostname]['app_port'] }}"
+        timeout: 120
+      register: result
+
+    - name: Print status
+      debug:
+        msg: "Web server is {{ 'running' if result is succeeded else 'not running' }}"
