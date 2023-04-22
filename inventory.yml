@@ -1,1 +1,1 @@
-task-vm ansible_host=51.124.246.41 ansible_port=22 app_port=80 ansible_user=skm
+task-vm2 ansible_host=13.95.135.92 ansible_port=22 app_port=8080 ansible_user=skm

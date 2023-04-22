@@ -1,4 +1,4 @@
-- name: Prepare host for Docker Compose
+- name: 
   hosts: all
   become: true
   tasks:
@@ -16,7 +16,6 @@
     - name: Print Docker version
       debug:
         var: docker_output.stdout_lines
-      when: docker_output.rc == 0
     - name: Check if Docker Compose is installed
       shell: docker-compose --version
       register: docker_compose_output
@@ -31,19 +30,22 @@
         sudo chmod +x /usr/local/bin/docker-compose
       vars:
         docker_compose_version: 1.29.2
-      when: ansible_distribution == 'Ubuntu' and docker_compose_output.rc != 0
+      when: docker_compose_output.rc != 0
     - name: Print Docker Compose version
       debug:
         var: docker_compose_output.stdout_lines
-      when: docker_compose_output.rc == 0
-- name: Install pip and Docker Python module
-  hosts: all
-  become: true
-  tasks:
+
     - name: Install Python 3 pip
       package:
         name: python3-pip
         state: present
+
+    - name: Install pyopenssl
+      pip:
+        name: pyopenssl
+        executable: pip3
+        state: latest
+
     - name: Install Docker Python module
       pip:
         name: docker
@@ -54,7 +56,7 @@
         name: docker-compose
         executable: pip3
         state: present
-- name: get the app itself
+- name: Install the app
   hosts: all
   become: true
   tasks:
@@ -65,15 +67,11 @@
         clone: 'yes'
         update: 'yes'
         force: true
-- name: Deploy Docker Compose app
-  hosts: all
-  become: true
-  tasks:
-    - name: Generate modified docker-compose.yml
+    - name: Generate modified docker-compose.yml based on the template
       template:
         src: docker-compose.yml.j2
         dest: /var/local/todo-app/app/docker-compose.yml
-    - name: Run docker-compose up command
+    - name: Run the docker-compose
       docker_compose:
         project_name: todo-app
         project_src: /var/local/todo-app/app/
@@ -86,7 +84,7 @@
         msg: '{{running_containers.stdout_lines}}'
     - name: Wait for the app to respond
       wait_for:
-        host: '{{ inventory_hostname }}'
+        host: 'localhost'
         port: '{{ hostvars[inventory_hostname][''app_port''] }}'
         timeout: 120
       register: result
