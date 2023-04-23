@@ -1,3 +1,4 @@
+---
 - name: 
   hosts: all
   become: true
@@ -13,14 +14,21 @@
         sudo sh get-docker.sh
         sudo usermod -aG docker $USER
       when: docker_output.rc != 0
+
+    - name: Fetch docker version
+      shell: docker --version
+      register: docker_output
+
     - name: Print Docker version
       debug:
         var: docker_output.stdout_lines
+
     - name: Check if Docker Compose is installed
       shell: docker-compose --version
       register: docker_compose_output
       ignore_errors: 'yes'
       changed_when: false
+
     - name: Install Docker Compose
       shell: >
         sudo curl -L "https://github.com/docker/compose/releases/download/{{
@@ -31,6 +39,11 @@
       vars:
         docker_compose_version: 1.29.2
       when: docker_compose_output.rc != 0
+
+    - name: Fetch Docker Compose version
+      shell: docker-compose --version
+      register: docker_compose_output
+
     - name: Print Docker Compose version
       debug:
         var: docker_compose_output.stdout_lines
